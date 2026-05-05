@@ -15,11 +15,11 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.webkit.WebViewAssetLoader
-import androidx.webkit.WebViewClientCompat
 
 /**
  * 질주 본능 — 안드로이드 WebView 래퍼.
@@ -74,7 +74,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
-                webViewClient = object : WebViewClientCompat() {
+                webViewClient = object : WebViewClient() {
                     override fun shouldInterceptRequest(
                         view: WebView,
                         request: WebResourceRequest,
@@ -169,8 +169,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onPause() {
-        webView?.onPause()
         super.onPause()
+        webView?.onPause()
     }
 
     override fun onResume() {
