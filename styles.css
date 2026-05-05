@@ -1,0 +1,669 @@
+/* ================================
+   질주 본능 - 공용 스타일시트
+   ================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    font-family: 'Noto Sans KR', sans-serif;
+    background-color: #0a0a0f;
+    color: #ffffff;
+}
+
+/* ================================
+   메인 페이지 (index.html) 레이아웃
+   ================================ */
+
+.main-container {
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* ===== 상단 배너 (50% 높이) ===== */
+.banner {
+    flex: 0 0 50%;
+    position: relative;
+    background:
+        linear-gradient(135deg, rgba(10, 10, 20, 0.85) 0%, rgba(40, 0, 0, 0.7) 100%),
+        radial-gradient(ellipse at top, #ff3c00 0%, #1a0000 60%, #000000 100%);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 3px solid #ff6b00;
+    box-shadow: 0 0 40px rgba(255, 60, 0, 0.6);
+}
+
+/* 배너 배경 - 도로 라인 애니메이션 */
+.banner::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 8px;
+    height: 200%;
+    background: repeating-linear-gradient(
+        to bottom,
+        #ffe600 0px,
+        #ffe600 30px,
+        transparent 30px,
+        transparent 60px
+    );
+    opacity: 0.5;
+    animation: roadScroll 1.2s linear infinite;
+}
+
+.banner::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(
+        ellipse at center,
+        transparent 0%,
+        transparent 60%,
+        rgba(0, 0, 0, 0.6) 100%
+    );
+    pointer-events: none;
+}
+
+@keyframes roadScroll {
+    from { transform: translate(-50%, 0); }
+    to { transform: translate(-50%, -50%); }
+}
+
+.banner-content {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    padding: 0 20px;
+    max-width: 1200px;
+}
+
+.game-title {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: clamp(3rem, 8vw, 7rem);
+    color: #ffe600;
+    text-shadow:
+        0 0 20px rgba(255, 230, 0, 0.8),
+        0 0 40px rgba(255, 60, 0, 0.6),
+        4px 4px 0 #ff3c00,
+        8px 8px 20px rgba(0, 0, 0, 0.8);
+    letter-spacing: 0.1em;
+    margin-bottom: 1rem;
+    animation: titlePulse 2s ease-in-out infinite;
+}
+
+@keyframes titlePulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.03); }
+}
+
+.game-intro {
+    font-size: clamp(1.2rem, 2.5vw, 2rem);
+    font-weight: 900;
+    color: #ffffff;
+    margin-bottom: 1.2rem;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+    letter-spacing: 0.05em;
+}
+
+.game-description {
+    font-size: clamp(0.9rem, 1.4vw, 1.2rem);
+    font-weight: 500;
+    color: #ffd9b3;
+    line-height: 1.6;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* ===== 하단 3개 버튼 (50% 높이) ===== */
+.button-section {
+    flex: 0 0 50%;
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    overflow: hidden;
+}
+
+.menu-button {
+    flex: 1;
+    height: 100%;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    color: #ffffff;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border-right: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.menu-button:last-child {
+    border-right: none;
+}
+
+.menu-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.15) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.menu-button:hover::before {
+    opacity: 1;
+}
+
+.menu-button:hover {
+    transform: scale(1.02);
+    z-index: 5;
+    box-shadow: 0 0 50px rgba(255, 255, 255, 0.3);
+}
+
+.menu-button:active {
+    transform: scale(0.98);
+}
+
+/* 자동차 설명 버튼 - 파란색 계열 */
+.btn-cars {
+    background: linear-gradient(135deg, #001a4d 0%, #003d99 50%, #0066ff 100%);
+}
+
+/* 세계관 설명 버튼 - 보라색 계열 */
+.btn-world {
+    background: linear-gradient(135deg, #2d004d 0%, #5a0099 50%, #9933ff 100%);
+}
+
+/* 게임 시작 버튼 - 빨강/주황 계열 */
+.btn-game {
+    background: linear-gradient(135deg, #4d0000 0%, #cc1a00 50%, #ff6b00 100%);
+    animation: gameBtnGlow 2s ease-in-out infinite;
+}
+
+@keyframes gameBtnGlow {
+    0%, 100% { box-shadow: inset 0 0 30px rgba(255, 230, 0, 0.2); }
+    50% { box-shadow: inset 0 0 60px rgba(255, 230, 0, 0.5); }
+}
+
+.menu-icon {
+    font-size: clamp(3rem, 6vw, 5rem);
+    margin-bottom: 0.5rem;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+    position: relative;
+    z-index: 1;
+}
+
+.menu-title {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: clamp(1.5rem, 3vw, 2.5rem);
+    letter-spacing: 0.1em;
+    text-shadow: 0 4px 10px rgba(0, 0, 0, 0.7);
+    position: relative;
+    z-index: 1;
+}
+
+.menu-subtitle {
+    font-size: clamp(0.8rem, 1.2vw, 1rem);
+    font-weight: 500;
+    opacity: 0.9;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+    position: relative;
+    z-index: 1;
+}
+
+/* ================================
+   서브 페이지 공통 (cars/world/game)
+   ================================ */
+
+.sub-page {
+    min-height: 100vh;
+    width: 100%;
+    overflow-y: auto;
+}
+
+body.sub-page-body {
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: auto;
+    min-height: 100vh;
+}
+
+/* 서브페이지 상단 헤더 */
+.sub-header {
+    width: 100%;
+    padding: 20px 40px;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.7) 100%);
+    border-bottom: 2px solid #ff6b00;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+}
+
+.sub-header .logo {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 1.8rem;
+    color: #ffe600;
+    text-decoration: none;
+    text-shadow: 0 0 10px rgba(255, 230, 0, 0.5);
+    letter-spacing: 0.1em;
+}
+
+.back-button {
+    padding: 10px 24px;
+    background: linear-gradient(135deg, #ff6b00 0%, #ff3c00 100%);
+    color: #ffffff;
+    text-decoration: none;
+    border-radius: 30px;
+    font-weight: 700;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.back-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(255, 60, 0, 0.5);
+    border-color: #ffe600;
+}
+
+/* 서브페이지 타이틀 영역 */
+.page-title-section {
+    text-align: center;
+    padding: 60px 20px 40px;
+    background: linear-gradient(180deg, rgba(255, 60, 0, 0.1) 0%, transparent 100%);
+}
+
+.page-title {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    color: #ffe600;
+    text-shadow:
+        0 0 20px rgba(255, 230, 0, 0.6),
+        4px 4px 0 #ff3c00;
+    letter-spacing: 0.1em;
+    margin-bottom: 1rem;
+}
+
+.page-subtitle {
+    font-size: clamp(1rem, 1.5vw, 1.3rem);
+    color: #ffd9b3;
+    font-weight: 500;
+}
+
+/* ================================
+   자동차 설명 페이지 (cars.html)
+   ================================ */
+
+.cars-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 30px;
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+}
+
+.car-card {
+    background: linear-gradient(145deg, #1a1a2e 0%, #0f0f1f 100%);
+    border-radius: 16px;
+    overflow: hidden;
+    border: 2px solid #2a2a3e;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.car-card:hover {
+    transform: translateY(-8px);
+    border-color: #ff6b00;
+    box-shadow: 0 15px 40px rgba(255, 60, 0, 0.3);
+}
+
+.car-image {
+    height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 6rem;
+    background: linear-gradient(135deg, #2a2a4e 0%, #1a1a2e 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.car-image::before {
+    content: '';
+    position: absolute;
+    bottom: 20%;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: repeating-linear-gradient(
+        to right,
+        #ffe600 0px,
+        #ffe600 20px,
+        transparent 20px,
+        transparent 40px
+    );
+    opacity: 0.6;
+}
+
+.car-info {
+    padding: 24px;
+}
+
+.car-name {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 1.8rem;
+    color: #ffe600;
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.05em;
+}
+
+.car-tag {
+    display: inline-block;
+    padding: 4px 12px;
+    background: linear-gradient(135deg, #ff6b00 0%, #ff3c00 100%);
+    color: #ffffff;
+    font-size: 0.85rem;
+    font-weight: 700;
+    border-radius: 20px;
+    margin-bottom: 12px;
+}
+
+.car-description {
+    font-size: 0.95rem;
+    color: #c0c0d0;
+    line-height: 1.6;
+    margin-bottom: 16px;
+}
+
+.car-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.stat-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: #a0a0b0;
+    width: 60px;
+    flex-shrink: 0;
+}
+
+.stat-bar {
+    flex: 1;
+    height: 8px;
+    background: #2a2a3e;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.stat-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ffe600 0%, #ff6b00 50%, #ff3c00 100%);
+    border-radius: 4px;
+    transition: width 1s ease;
+}
+
+/* ================================
+   세계관 페이지 (world.html)
+   ================================ */
+
+.world-content {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 30px 80px;
+}
+
+.world-section {
+    margin-bottom: 50px;
+    padding: 30px;
+    background: linear-gradient(145deg, rgba(26, 26, 46, 0.8) 0%, rgba(15, 15, 31, 0.8) 100%);
+    border-radius: 16px;
+    border-left: 4px solid #ff6b00;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+}
+
+.world-section h2 {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 2rem;
+    color: #ffe600;
+    margin-bottom: 16px;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.world-section h2 .emoji {
+    font-size: 2.2rem;
+}
+
+.world-section p {
+    font-size: 1.05rem;
+    line-height: 1.9;
+    color: #e0e0e8;
+    margin-bottom: 12px;
+}
+
+.world-section .highlight {
+    color: #ffe600;
+    font-weight: 700;
+}
+
+.world-quote {
+    margin: 30px 0;
+    padding: 30px;
+    background: linear-gradient(135deg, rgba(255, 60, 0, 0.15) 0%, rgba(255, 107, 0, 0.05) 100%);
+    border-left: 4px solid #ffe600;
+    border-radius: 8px;
+    font-size: 1.3rem;
+    font-style: italic;
+    color: #ffffff;
+    text-align: center;
+    line-height: 1.7;
+}
+
+/* ================================
+   게임 시작 페이지 (game.html)
+   ================================ */
+
+.game-page-body {
+    overflow: hidden;
+    background: #000;
+}
+
+.game-container {
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background:
+        radial-gradient(ellipse at center, #1a0000 0%, #000000 70%);
+    position: relative;
+    overflow: hidden;
+}
+
+.game-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 8px;
+    height: 200%;
+    background: repeating-linear-gradient(
+        to bottom,
+        #ffe600 0px,
+        #ffe600 40px,
+        transparent 40px,
+        transparent 80px
+    );
+    opacity: 0.4;
+    animation: roadScroll 0.8s linear infinite;
+}
+
+.game-ready {
+    text-align: center;
+    z-index: 2;
+    padding: 40px;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 20px;
+    border: 2px solid #ff6b00;
+    box-shadow: 0 0 60px rgba(255, 60, 0, 0.5);
+    backdrop-filter: blur(8px);
+    max-width: 600px;
+}
+
+.game-ready h1 {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: clamp(3rem, 7vw, 5rem);
+    color: #ffe600;
+    text-shadow:
+        0 0 30px rgba(255, 230, 0, 0.8),
+        4px 4px 0 #ff3c00;
+    letter-spacing: 0.1em;
+    margin-bottom: 1rem;
+    animation: titlePulse 1.5s ease-in-out infinite;
+}
+
+.game-ready .ready-text {
+    font-size: 1.3rem;
+    color: #ffd9b3;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+}
+
+.start-button {
+    display: inline-block;
+    padding: 18px 60px;
+    background: linear-gradient(135deg, #ffe600 0%, #ff6b00 50%, #ff3c00 100%);
+    color: #000000;
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 1.8rem;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    letter-spacing: 0.1em;
+    box-shadow: 0 8px 30px rgba(255, 60, 0, 0.6);
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.start-button:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 15px 40px rgba(255, 60, 0, 0.8);
+}
+
+.start-button:active {
+    transform: translateY(0) scale(0.98);
+}
+
+.controls-info {
+    margin-top: 30px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 230, 0, 0.3);
+}
+
+.controls-info h3 {
+    color: #ffe600;
+    font-size: 1.1rem;
+    margin-bottom: 12px;
+}
+
+.controls-info p {
+    color: #c0c0d0;
+    font-size: 0.95rem;
+    line-height: 1.7;
+}
+
+/* ================================
+   반응형 (모바일)
+   ================================ */
+
+@media (max-width: 768px) {
+    .banner {
+        flex: 0 0 45%;
+    }
+
+    .button-section {
+        flex: 0 0 55%;
+    }
+
+    .menu-icon {
+        font-size: 2.5rem;
+    }
+
+    .menu-title {
+        font-size: 1.2rem;
+    }
+
+    .menu-subtitle {
+        display: none;
+    }
+
+    .game-title {
+        font-size: 2.8rem;
+    }
+
+    .game-intro {
+        font-size: 1rem;
+        margin-bottom: 0.8rem;
+    }
+
+    .game-description {
+        font-size: 0.85rem;
+    }
+
+    .cars-grid {
+        grid-template-columns: 1fr;
+        padding: 20px 16px 60px;
+    }
+
+    .sub-header {
+        padding: 14px 20px;
+    }
+
+    .sub-header .logo {
+        font-size: 1.3rem;
+    }
+}

@@ -1,0 +1,31 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Node (예약)
+node_modules/
+
+# Android build artifacts
+JilJuBonNeung_Android/.gradle/
+JilJuBonNeung_Android/build/
+JilJuBonNeung_Android/app/build/
+JilJuBonNeung_Android/local.properties
+JilJuBonNeung_Android/captures/
+
+# 빌드 결과물
+*.apk
+*.aab
+*.keystore
+
+# 백업
+*~
+*.bak
+
+# 빈/손상된 중첩 Git 저장소 (상위 git add 방해)
+urban-engine/

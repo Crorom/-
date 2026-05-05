@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>게임 시작 - 질주 본능</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body.game-body {
+            margin: 0;
+            overflow: hidden;
+            background: #000;
+            font-family: 'Noto Sans KR', sans-serif;
+            color: #fff;
+            height: 100vh;
+            width: 100vw;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .game-stage {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #050510;
+        }
+
+        .game-canvas-wrapper {
+            position: relative;
+            height: min(100vh, calc(100vw * 16 / 9));
+            width: min(100vw, calc(100vh * 9 / 16));
+            background: #0a0a14;
+            box-shadow: 0 0 40px rgba(255, 60, 0, 0.3);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+
+        /* ===== HUD ===== */
+        .hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 16px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .hud-score {
+            pointer-events: auto;
+            background: rgba(0, 0, 0, 0.65);
+            padding: 10px 22px;
+            border-radius: 30px;
+            border: 2px solid #ffe600;
+            font-family: 'Black Han Sans', sans-serif;
+            font-size: 1.7rem;
+            color: #ffe600;
+            text-shadow: 0 0 10px rgba(255, 230, 0, 0.5);
+            letter-spacing: 0.05em;
+        }
+
+        .hud-settings {
+            pointer-events: auto;
+            background: rgba(0, 0, 0, 0.65);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 2px solid #ffe600;
+            color: #ffe600;
+            cursor: pointer;
+            font-size: 1.6rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s;
+        }
+
+        .hud-settings:hover {
+            transform: rotate(90deg);
+        }
+
+        /* ===== Speed Gauge ===== */
+        .speed-gauge {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 18px;
+            height: 220px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 9px;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            z-index: 5;
+            cursor: pointer;
+            pointer-events: auto;
+            transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+        }
+
+        .speed-gauge-fill {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(to top, #00ff66 0%, #ffe600 50%, #ff6b00 75%, #ff0000 100%);
+            transition: height 0.3s ease;
+            height: 0%;
+        }
+
+        /* 게이지 MAX 상태 — Burst 발동 가능 */
+        .speed-gauge.max-ready {
+            border-color: #ffe600;
+            box-shadow:
+                0 0 20px #ffe600,
+                0 0 40px rgba(255, 107, 0, 0.6);
+            animation: maxReadyPulse 0.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes maxReadyPulse {
+            from { transform: translateY(-50%) scale(1.0); }
+            to   { transform: translateY(-50%) scale(1.15); }
+        }
+
+        /* Burst 활성 — 게이지 무지개 */
+        .speed-gauge.bursting .speed-gauge-fill {
+            background: linear-gradient(
+                to top,
+                #ff00ff 0%,
+                #00ffff 25%,
+                #ffff00 50%,
+                #ff6b00 75%,
+                #ff00ff 100%);
+            background-size: 100% 300%;
+            animation: rainbowSlide 0.4s linear infinite;
+        }
+
+        @keyframes rainbowSlide {
+            from { background-position: 0 0; }
+            to   { background-position: 0 300%; }
+        }
+
+        /* ===== Burst Overlay (전체 화면 효과) ===== */
+        .burst-overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 9;
+            background: repeating-linear-gradient(
+                to bottom,
+                transparent 0px,
+                transparent 28px,
+                rgba(255, 255, 255, 0.18) 28px,
+                rgba(255, 255, 255, 0.18) 33px
+            );
+            animation: burstSpeedLines 0.1s linear infinite;
+        }
+
+        .burst-overlay.hidden {
+            display: none;
+        }
+
+        @keyframes burstSpeedLines {
+            from { background-position: 0 0; }
+            to   { background-position: 0 33px; }
+        }
+
+        .burst-overlay::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border: 6px solid #ffe600;
+            box-shadow:
+                inset 0 0 60px rgba(255, 215, 0, 0.7),
+                0 0 30px rgba(255, 107, 0, 0.6);
+            animation: burstBorder 0.3s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes burstBorder {
+            0%, 100% { border-color: #ffe600; }
+            50%      { border-color: #ff6b00; }
+        }
+
+        .burst-text {
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .burst-label {
+            font-family: 'Black Han Sans', sans-serif;
+            font-size: 2.5rem;
+            color: #ffe600;
+            text-shadow:
+                0 0 25px #ff6b00,
+                4px 4px 0 #ff3c00;
+            letter-spacing: 0.1em;
+            animation: burstBlink 0.4s linear infinite;
+        }
+
+        @keyframes burstBlink {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50%      { opacity: 0.5; transform: scale(0.95); }
+        }
+
+        .burst-countdown {
+            font-family: 'Black Han Sans', sans-serif;
+            font-size: 5rem;
+            color: #ffffff;
+            text-shadow:
+                0 0 30px #ffe600,
+                6px 6px 0 #ff3c00;
+            margin-top: 0.4rem;
+        }
+
+        /* ===== Score Popup (+N) ===== */
+        .score-float {
+            position: absolute;
+            pointer-events: none;
+            z-index: 7;
+            font-family: 'Black Han Sans', sans-serif;
+            font-size: 1.4rem;
+            color: #ffe600;
+            text-shadow:
+                0 0 8px #000,
+                2px 2px 0 #ff3c00;
+            animation: scoreFloatAnim 0.7s ease-out forwards;
+        }
+
+        .score-float.big {
+            font-size: 2rem;
+            color: #ff6b00;
+        }
+
+        @keyframes scoreFloatAnim {
+            0%   { opacity: 0; transform: translate(-50%, 0) scale(0.7); }
+            20%  { opacity: 1; transform: translate(-50%, -10px) scale(1.1); }
+            100% { opacity: 0; transform: translate(-50%, -50px) scale(1); }
+        }
+
+        /* ===== Near Miss Popup ===== */
+        .near-miss-popup {
+            position: absolute;
+            top: 25%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Black Han Sans', sans-serif;
+            font-size: 2.4rem;
+            color: #ffe600;
+            text-shadow:
+                0 0 20px rgba(255, 107, 0, 0.9),
+                4px 4px 0 #ff3c00;
+            letter-spacing: 0.05em;
+            pointer-events: none;
+            opacity: 0;
+            z-index: 8;
+            white-space: nowrap;
+        }
+
+        .near-miss-popup.show {
+            animation: nearMissAnim 0.6s ease-out forwards;
+        }
+
+        @keyframes nearMissAnim {
+            0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            30%  { opacity: 1; transform: translate(-50%, -50%) scale(1.25); }
+            70%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
+        }
+
+        /* ===== Lane Buttons (화면 하단 ◀ ▶) ===== */
+        .lane-buttons {
+            position: absolute;
+            bottom: 24px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 24px;
+            pointer-events: none;
+            z-index: 6;
+        }
+
+        .lane-btn {
+            pointer-events: auto;
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.55);
+            border: 3px solid #ffe600;
+            color: #ffe600;
+            font-size: 1.8rem;
+            font-weight: 900;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s, background 0.15s;
+            backdrop-filter: blur(4px);
+        }
+
+        .lane-btn:active {
+            transform: scale(0.92);
+            background: rgba(255, 230, 0, 0.25);
+        }
+
+        /* ===== Popup Overlay ===== */
+        .popup-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.78);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            backdrop-filter: blur(6px);
+            padding: 20px;
+        }
+
+        .popup-overlay.hidden {
+            display: none;
+        }
+
+        .popup-card {
+            background: linear-gradient(145deg, #1a1a2e 0%, #0f0f1f 100%);
+            border: 2px solid #ff6b00;
+            border-radius: 16px;
+            padding: 32px 28px;
+            min-width: 260px;
+            max-width: 90%;
+            box-shadow: 0 0 40px rgba(255, 60, 0, 0.5);
+        }
+
+        .popup-title {
+            font-family: 'Black Han Sans', sans-serif;
+            font-size: 1.9rem;
+            color: #ffe600;
+            text-align: center;
+            margin-bottom: 22px;
+            letter-spacing: 0.05em;
+            text-shadow: 0 0 15px rgba(255, 230, 0, 0.4);
+        }
+
+        .popup-btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            margin: 10px 0;
+            background: linear-gradient(135deg, #ff6b00 0%, #ff3c00 100%);
+            color: #ffffff;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .popup-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 60, 0, 0.5);
+        }
+
+        .popup-btn.secondary {
+            background: linear-gradient(135deg, #2a2a44 0%, #1a1a2e 100%);
+            border: 1px solid #555;
+        }
+
+        .popup-btn.secondary:hover {
+            box-shadow: 0 6px 20px rgba(255, 230, 0, 0.2);
+        }
+
+        .slider-row {
+            margin: 18px 0;
+        }
+
+        .slider-row label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            color: #ffd9b3;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .slider-row input[type=range] {
+            width: 100%;
+            accent-color: #ff6b00;
+            cursor: pointer;
+        }
+
+        .slider-value {
+            color: #ffe600;
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+
+        /* ===== Game Over Screen ===== */
+        .game-over-final {
+            text-align: center;
+            margin-bottom: 12px;
+        }
+
+        .game-over-final .label {
+            color: #c0c0d0;
+            font-size: 0.95rem;
+            margin-bottom: 4px;
+        }
+
+        .game-over-final .value {
+            font-family: 'Black Han Sans', sans-serif;
+            font-size: 2.8rem;
+            color: #ffe600;
+            text-shadow: 0 0 18px rgba(255, 230, 0, 0.6);
+        }
+
+        .game-over-best {
+            color: #ffd9b3;
+            font-size: 0.95rem;
+            text-align: center;
+            margin-top: 4px;
+        }
+
+        .new-record {
+            color: #ff6b00;
+            font-family: 'Black Han Sans', sans-serif;
+            font-size: 1.3rem;
+            text-align: center;
+            margin: 10px 0;
+            animation: blink 0.9s infinite;
+            text-shadow: 0 0 10px rgba(255, 107, 0, 0.6);
+        }
+
+        @keyframes blink {
+            50% { opacity: 0.4; }
+        }
+
+        /* ===== Start Screen ===== */
+        .start-card {
+            text-align: center;
+            padding: 36px 30px;
+        }
+
+        .start-title {
+            font-family: 'Black Han Sans', sans-serif;
+            font-size: 3rem;
+            color: #ffe600;
+            text-shadow:
+                0 0 22px rgba(255, 230, 0, 0.7),
+                4px 4px 0 #ff3c00;
+            margin-bottom: 1rem;
+            letter-spacing: 0.1em;
+        }
+
+        .start-text {
+            color: #ffd9b3;
+            font-size: 1.05rem;
+            line-height: 1.6;
+            margin-bottom: 22px;
+        }
+
+        .start-controls {
+            color: #aaa;
+            font-size: 0.85rem;
+            margin-top: 14px;
+            line-height: 1.6;
+        }
+
+        .start-controls strong {
+            color: #ffe600;
+        }
+    </style>
+</head>
+<body class="game-body">
+
+    <div class="game-stage">
+        <div class="game-canvas-wrapper">
+            <canvas id="gameCanvas"></canvas>
+
+            <!-- HUD: 점수 (왼쪽 상단) + 설정 (오른쪽 상단) -->
+            <div class="hud">
+                <div class="hud-score">🏆 <span id="scoreText">0</span></div>
+                <button class="hud-settings" id="btnSettings" title="설정">⚙</button>
+            </div>
+
+            <!-- 속도 게이지 (우측 사이드) - 클릭/탭하여 Burst 발동 -->
+            <div class="speed-gauge" id="speedGauge" title="Burst (게이지 MAX 시)">
+                <div class="speed-gauge-fill" id="speedFill"></div>
+            </div>
+
+            <!-- Near Miss 팝업 -->
+            <div class="near-miss-popup" id="nearMissPopup">NEAR MISS!</div>
+
+            <!-- Speed Burst 전체 오버레이 -->
+            <div class="burst-overlay hidden" id="burstOverlay">
+                <div class="burst-text">
+                    <div class="burst-label">⚡ BURST! ⚡</div>
+                    <div class="burst-countdown" id="burstCountdown">3</div>
+                </div>
+            </div>
+
+            <!-- Score Popup 컨테이너 (+N 점수 표시용 동적 요소들) -->
+            <div id="scoreFloatContainer" style="position:absolute; inset:0; pointer-events:none; z-index:7;"></div>
+
+            <!-- 화면 하단 차선 변경 버튼 -->
+            <div class="lane-buttons">
+                <button class="lane-btn" id="btnLeft" aria-label="왼쪽 차선">◀</button>
+                <button class="lane-btn" id="btnRight" aria-label="오른쪽 차선">▶</button>
+            </div>
+
+            <!-- ============================== -->
+            <!-- 시작 화면 -->
+            <!-- ============================== -->
+            <div class="popup-overlay" id="startScreen">
+                <div class="popup-card start-card">
+                    <h1 class="start-title">READY?</h1>
+                    <p class="start-text">
+                        네온 시티의 도로 위에서<br>
+                        당신의 본능이 시험에 든다.
+                    </p>
+                    <button class="popup-btn" id="btnStart">START</button>
+                    <div class="start-controls">
+                        <p style="margin-bottom:10px;">
+                            <strong>차선 이동</strong><br>
+                            PC: ← / → 또는 A / D 키<br>
+                            모바일: 좌우 슬라이드 / ◀ ▶ 버튼
+                        </p>
+                        <p style="margin-bottom:10px; padding:10px; background:rgba(255,230,0,0.08); border:1px solid rgba(255,230,0,0.4); border-radius:8px;">
+                            <strong style="color:#ffe600;">⚡ SPEED BURST</strong><br>
+                            속도 게이지가 가득 찼을 때<br>
+                            <strong>↑ 또는 W 키</strong> / <strong>위로 슬라이드</strong> / <strong>게이지 클릭</strong><br>
+                            → 3초간 <span style="color:#ff6b00;">초고속 + 무적 상태</span><br>
+                            <span style="color:#ff8800;">충돌해도 안 죽고 모든 통과 100점!</span>
+                        </p>
+                        <p style="color:#ff8800;">아슬아슬하게 스칠수록 점수 UP!</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================== -->
+            <!-- 설정 팝업 -->
+            <!-- ============================== -->
+            <div class="popup-overlay hidden" id="settingsPopup">
+                <div class="popup-card">
+                    <div class="popup-title">⚙ 설정</div>
+                    <button class="popup-btn" id="btnResume">게임 돌아가기</button>
+                    <button class="popup-btn secondary" id="btnOptions">옵션</button>
+                    <button class="popup-btn secondary" id="btnGiveUp">게임 포기</button>
+                </div>
+            </div>
+
+            <!-- ============================== -->
+            <!-- 옵션 팝업 -->
+            <!-- ============================== -->
+            <div class="popup-overlay hidden" id="optionsPopup">
+                <div class="popup-card">
+                    <div class="popup-title"><span id="btnMute" title="음소거 토글" style="cursor:pointer; user-select:none; transition:filter 0.2s;">🎵</span> 옵션</div>
+                    <div class="slider-row">
+                        <label>
+                            <span>배경 음악</span>
+                            <span class="slider-value" id="bgmVal">60%</span>
+                        </label>
+                        <input type="range" id="bgmSlider" min="0" max="100" value="60">
+                    </div>
+                    <div class="slider-row">
+                        <label>
+                            <span>효과음</span>
+                            <span class="slider-value" id="sfxVal">80%</span>
+                        </label>
+                        <input type="range" id="sfxSlider" min="0" max="100" value="80">
+                    </div>
+                    <button class="popup-btn secondary" id="btnBackToSettings">← 설정으로 돌아가기</button>
+                </div>
+            </div>
+
+            <!-- ============================== -->
+            <!-- 게임 오버 화면 -->
+            <!-- ============================== -->
+            <div class="popup-overlay hidden" id="gameOverScreen">
+                <div class="popup-card">
+                    <div class="popup-title" style="color:#ff3c00;">GAME OVER</div>
+                    <div class="game-over-final">
+                        <div class="label">최종 점수</div>
+                        <div class="value" id="finalScore">0</div>
+                    </div>
+                    <div class="new-record" id="newRecord" style="display:none;">★ NEW RECORD! ★</div>
+                    <div class="game-over-best">최고 기록: <span id="bestScore">0</span></div>
+                    <div style="margin-top: 22px;">
+                        <button class="popup-btn" id="btnRestart">다시 시작</button>
+                        <button class="popup-btn secondary" onclick="location.href='index.html'">메인으로</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
