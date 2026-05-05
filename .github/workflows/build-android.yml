@@ -43,23 +43,25 @@ jobs:
           echo "JAVA_HOME=$JAVA_HOME"
           echo "ANDROID_HOME=$ANDROID_HOME"
           java -version
-          gradle --version | head -n 5
+          which gradle && gradle --version | head -n 5 || true
 
-      - name: Accept Android SDK licenses
-        shell: bash
-        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses || true
+      - name: Generate gradle wrapper
+        run: |
+          gradle wrapper --gradle-version 8.7 --distribution-type bin
+          chmod +x gradlew
+          ls -la gradle/wrapper/
 
-      - name: Build Debug APK (system gradle, no wrapper required)
-        run: gradle :app:assembleDebug --no-daemon --stacktrace --warning-mode=all
+      - name: Build Debug APK
+        run: ./gradlew :app:assembleDebug --no-daemon --stacktrace --warning-mode=all
 
       - name: Build Release APK (unsigned)
-        run: gradle :app:assembleRelease --no-daemon --stacktrace --warning-mode=all
+        run: ./gradlew :app:assembleRelease --no-daemon --stacktrace --warning-mode=all
         continue-on-error: true
 
       - name: List built APKs
         if: always()
         run: |
-          echo "=== Debug APKs ==="
+          echo "=== APK files ==="
           find app/build/outputs/apk -name "*.apk" -type f || true
           echo "=== Sizes ==="
           ls -lh app/build/outputs/apk/debug/ || true
@@ -68,10 +70,10 @@ jobs:
       - name: Dump build logs on failure
         if: failure()
         run: |
-          echo "=== gradle build dir tail ==="
-          find . -name "*.log" -type f -mmin -120 -exec tail -n 200 {} +
-          echo "=== last 200 lines of any *report* ==="
-          find app/build/reports -type f 2>/dev/null | head -n 30
+          echo "=== reports tree ==="
+          find app/build/reports -type f 2>/dev/null | head -n 40 || true
+          echo "=== last 200 lines of recent .log files ==="
+          find . -name "*.log" -type f -mmin -120 -exec tail -n 200 {} + || true
 
       - name: Upload Debug APK
         if: always()
@@ -91,7 +93,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
-      - name: Upload build reports (debug)
+      - name: Upload build reports (always)
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -100,4 +102,4 @@ jobs:
             JilJuBonNeung_Android/app/build/reports
             JilJuBonNeung_Android/app/build/outputs/logs
           if-no-files-found: ignore
-          retention-days: 7
+          retention-days: 14

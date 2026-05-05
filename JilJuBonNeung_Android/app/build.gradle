@@ -33,7 +33,7 @@ android {
 
     // WebView/미디어: APK 안에서 압축된 바이너리는 일부 기기에서 로드 실패할 수 있음
     androidResources {
-        noCompress += ['png', 'mp3', 'wav']
+        noCompress 'png', 'mp3', 'wav'
     }
 }
 
