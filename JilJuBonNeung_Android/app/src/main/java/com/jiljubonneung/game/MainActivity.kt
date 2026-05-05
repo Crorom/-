@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowInsets
@@ -12,19 +13,19 @@ import android.view.WindowInsetsController
 import android.view.WindowManager
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
-import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.ScrollView
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
-import androidx.webkit.WebViewAssetLoader
+import java.io.PrintWriter
+import java.io.StringWriter
 
 /**
  * 질주 본능 — 안드로이드 WebView 래퍼.
- * file:// 직접 로드는 기기/WebView 조합에 따라 즉시 종료·빈 화면이 날 수 있어,
- * [WebViewAssetLoader]로 assets를 가상 HTTPS URL로 제공합니다.
+ * 단순화된 구현: assets/index.html 을 file:// 로 직접 로드.
  */
 class MainActivity : AppCompatActivity() {
 
@@ -32,10 +33,7 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val TAG = "JilJuWebView"
-
-        /** "/assets/" 접두사 → APK의 assets/ 디렉터리 */
-        private const val START_URL =
-            "https://appassets.androidplatform.net/assets/index.html"
+        private const val START_URL = "file:///android_asset/index.html"
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -47,65 +45,55 @@ class MainActivity : AppCompatActivity() {
         try {
             applyImmersiveMode()
 
-            val loader = WebViewAssetLoader.Builder()
-                .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this))
-                .build()
+            val wv = WebView(this)
+            wv.settings.apply {
+                javaScriptEnabled = true
+                domStorageEnabled = true
+                useWideViewPort = true
+                loadWithOverviewMode = true
 
-            val wv = WebView(this).apply {
-                settings.apply {
-                    javaScriptEnabled = true
-                    domStorageEnabled = true
-                    useWideViewPort = true
-                    loadWithOverviewMode = true
+                builtInZoomControls = false
+                displayZoomControls = false
+                setSupportZoom(false)
+                textZoom = 100
 
-                    builtInZoomControls = false
-                    displayZoomControls = false
-                    setSupportZoom(false)
-                    textZoom = 100
+                allowFileAccess = true
+                allowContentAccess = true
+                allowFileAccessFromFileURLs = true
+                allowUniversalAccessFromFileURLs = true
 
-                    allowFileAccess = true
-                    allowContentAccess = true
+                cacheMode = WebSettings.LOAD_DEFAULT
+                mediaPlaybackRequiresUserGesture = false
 
-                    cacheMode = WebSettings.LOAD_DEFAULT
-                    mediaPlaybackRequiresUserGesture = false
-
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                        mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-                    }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
                 }
-
-                webViewClient = object : WebViewClient() {
-                    override fun shouldInterceptRequest(
-                        view: WebView,
-                        request: WebResourceRequest,
-                    ): WebResourceResponse? {
-                        return loader.shouldInterceptRequest(request.url)
-                    }
-
-                    override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-                        super.onPageStarted(view, url, favicon)
-                        Log.i(TAG, "onPageStarted: $url")
-                    }
-
-                    override fun onReceivedError(
-                        view: WebView,
-                        request: WebResourceRequest,
-                        error: WebResourceError,
-                    ) {
-                        super.onReceivedError(view, request, error)
-                        Log.e(
-                            TAG,
-                            "onReceivedError: ${error.description} url=${request.url} mainFrame=${request.isForMainFrame}",
-                        )
-                    }
-                }
-
-                isVerticalScrollBarEnabled = false
-                isHorizontalScrollBarEnabled = false
-                overScrollMode = View.OVER_SCROLL_NEVER
-                setOnLongClickListener { true }
-                isLongClickable = false
             }
+
+            wv.webViewClient = object : WebViewClient() {
+                override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+                    super.onPageStarted(view, url, favicon)
+                    Log.i(TAG, "onPageStarted: $url")
+                }
+
+                override fun onReceivedError(
+                    view: WebView,
+                    request: WebResourceRequest,
+                    error: WebResourceError,
+                ) {
+                    super.onReceivedError(view, request, error)
+                    Log.e(
+                        TAG,
+                        "onReceivedError: ${error.description} url=${request.url} mainFrame=${request.isForMainFrame}",
+                    )
+                }
+            }
+
+            wv.isVerticalScrollBarEnabled = false
+            wv.isHorizontalScrollBarEnabled = false
+            wv.overScrollMode = View.OVER_SCROLL_NEVER
+            wv.setOnLongClickListener { true }
+            wv.isLongClickable = false
 
             webView = wv
             setContentView(wv)
@@ -124,22 +112,40 @@ class MainActivity : AppCompatActivity() {
         } catch (t: Throwable) {
             Log.e(TAG, "WebView init failed", t)
             webView = null
-            val msg = buildString {
+            showFallback(t)
+        }
+    }
+
+    private fun showFallback(t: Throwable) {
+        val sw = StringWriter()
+        t.printStackTrace(PrintWriter(sw))
+        val full = sw.toString()
+
+        val txt = TextView(this).apply {
+            setBackgroundColor(0xFF000000.toInt())
+            setTextColor(0xFFFFFFFF.toInt())
+            setPadding(40, 60, 40, 40)
+            textSize = 12f
+            gravity = Gravity.TOP
+            text = buildString {
                 appendLine("화면을 띄울 수 없습니다.")
                 appendLine()
                 appendLine("Android System WebView 또는 Chrome을")
-                appendLine("Play 스토어에서 최신으로 업데이트 해 주세요.")
+                appendLine("Play 스토어에서 최신으로 업데이트한 뒤")
+                appendLine("다시 실행해 주세요.")
                 appendLine()
-                append("(${t.javaClass.simpleName}: ${t.message})")
+                appendLine("--- DEBUG ---")
+                appendLine("Build.VERSION=${Build.VERSION.SDK_INT}")
+                appendLine("Build.MODEL=${Build.MANUFACTURER} ${Build.MODEL}")
+                appendLine()
+                append(full)
             }
-            setContentView(
-                TextView(this).apply {
-                    text = msg
-                    setPadding(48, 48, 48, 48)
-                    textSize = 14f
-                },
-            )
         }
+        val scroll = ScrollView(this).apply {
+            setBackgroundColor(0xFF000000.toInt())
+            addView(txt, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        }
+        setContentView(scroll)
     }
 
     @Suppress("DEPRECATION")
