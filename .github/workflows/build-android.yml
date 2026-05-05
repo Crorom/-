@@ -5,10 +5,14 @@ on:
     branches: ['**']
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Build Debug APK
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     defaults:
       run:
@@ -31,25 +35,29 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: '8.7'
+          cache-disabled: true
 
-      - name: Generate gradle wrapper (if missing)
+      - name: Show environment
         run: |
-          if [ ! -f "gradlew" ]; then
-            gradle wrapper --gradle-version 8.7
-          fi
-          chmod +x gradlew
+          echo "PWD=$(pwd)"
+          echo "JAVA_HOME=$JAVA_HOME"
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          java -version
+          gradle --version | head -n 5
 
       - name: Accept Android SDK licenses
-        run: yes | sdkmanager --licenses || true
+        shell: bash
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses || true
 
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+      - name: Build Debug APK (system gradle, no wrapper required)
+        run: gradle :app:assembleDebug --no-daemon --stacktrace --warning-mode=all
 
       - name: Build Release APK (unsigned)
-        run: ./gradlew assembleRelease --no-daemon --stacktrace
+        run: gradle :app:assembleRelease --no-daemon --stacktrace --warning-mode=all
         continue-on-error: true
 
       - name: List built APKs
+        if: always()
         run: |
           echo "=== Debug APKs ==="
           find app/build/outputs/apk -name "*.apk" -type f || true
@@ -57,18 +65,39 @@ jobs:
           ls -lh app/build/outputs/apk/debug/ || true
           ls -lh app/build/outputs/apk/release/ || true
 
+      - name: Dump build logs on failure
+        if: failure()
+        run: |
+          echo "=== gradle build dir tail ==="
+          find . -name "*.log" -type f -mmin -120 -exec tail -n 200 {} +
+          echo "=== last 200 lines of any *report* ==="
+          find app/build/reports -type f 2>/dev/null | head -n 30
+
       - name: Upload Debug APK
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: JilJuBonNeung-debug-apk
           path: JilJuBonNeung_Android/app/build/outputs/apk/debug/*.apk
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 30
 
       - name: Upload Release APK (unsigned)
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: JilJuBonNeung-release-unsigned-apk
           path: JilJuBonNeung_Android/app/build/outputs/apk/release/*.apk
           if-no-files-found: warn
           retention-days: 30
+
+      - name: Upload build reports (debug)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: JilJuBonNeung-build-reports
+          path: |
+            JilJuBonNeung_Android/app/build/reports
+            JilJuBonNeung_Android/app/build/outputs/logs
+          if-no-files-found: ignore
+          retention-days: 7
