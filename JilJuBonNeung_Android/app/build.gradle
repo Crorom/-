@@ -11,8 +11,8 @@ android {
         applicationId "com.jiljubonneung.game"
         minSdk 24
         targetSdk 34
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "1.0.1"
     }
 
     buildTypes {
@@ -31,9 +31,9 @@ android {
         jvmTarget = '17'
     }
 
-    // assets 폴더의 png 파일이 압축되지 않도록 (WebView 로딩 속도)
+    // WebView/미디어: APK 안에서 압축된 바이너리는 일부 기기에서 로드 실패할 수 있음
     androidResources {
-        noCompress 'png'
+        noCompress += ['png', 'mp3', 'wav']
     }
 }
 
